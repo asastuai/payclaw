@@ -72,10 +72,13 @@ export class EVMAdapter extends ChainAdapter {
     this.chainId = chainId;
 
     const chainConfig = CHAINS[chainId];
+    const evmChains = Object.entries(CHAINS).filter(([, c]) => c.type === 'evm').map(([id]) => id);
     if (!chainConfig || chainConfig.type !== 'evm') {
       throw new PayClawError(
         ErrorCode.CHAIN_NOT_SUPPORTED,
-        `Chain "${chainId}" is not a supported EVM chain.`,
+        `Chain "${chainId}" is not a supported EVM chain. `
+        + `Supported EVM chains: ${evmChains.join(', ')}. `
+        + `If you need Solana, the SDK selects the SolanaAdapter automatically.`,
       );
     }
 
@@ -85,16 +88,21 @@ export class EVMAdapter extends ChainAdapter {
     if (!viemChain) {
       throw new PayClawError(
         ErrorCode.CHAIN_NOT_SUPPORTED,
-        `No viem chain definition found for "${chainId}".`,
+        `No viem chain definition found for "${chainId}". `
+        + `This is likely an internal error — the chain is configured in CHAINS but missing from the viem mapping. `
+        + `Supported chains: ${Object.keys(VIEM_CHAINS).join(', ')}.`,
       );
     }
     this.viemChain = viemChain;
 
     const addresses = CONTRACT_ADDRESSES[chainId];
     if (!addresses) {
+      const deployedChains = Object.keys(CONTRACT_ADDRESSES).join(', ') || '(none)';
       throw new PayClawError(
         ErrorCode.CHAIN_NOT_SUPPORTED,
-        `No contract addresses configured for chain "${chainId}".`,
+        `No PayClaw contracts deployed on chain "${chainId}". `
+        + `Contracts are currently deployed on: ${deployedChains}. `
+        + `If this is a new chain, deploy the contracts first using the PayClaw deployer.`,
       );
     }
     this.addresses = addresses;
@@ -113,7 +121,8 @@ export class EVMAdapter extends ChainAdapter {
     if (!this.ownerAccount || !this.ownerWalletClient) {
       throw new PayClawError(
         ErrorCode.NOT_OWNER,
-        'Owner account not configured. Call createWallet() or loadWallet() first.',
+        'Owner account not configured. This operation requires the owner private key. '
+        + 'Call createWallet() with ownerPrivateKey, or loadWallet() with the keys parameter to configure signing.',
       );
     }
     return { account: this.ownerAccount, client: this.ownerWalletClient };
@@ -123,7 +132,8 @@ export class EVMAdapter extends ChainAdapter {
     if (!this.agentAccount || !this.agentWalletClient) {
       throw new PayClawError(
         ErrorCode.NOT_AGENT,
-        'Agent account not configured. Call createWallet() or loadWallet() first.',
+        'Agent account not configured. This operation requires the agent private key. '
+        + 'Call createWallet() with agentPrivateKey, or loadWallet() with the keys parameter to configure signing.',
       );
     }
     return { account: this.agentAccount, client: this.agentWalletClient };
@@ -169,9 +179,12 @@ export class EVMAdapter extends ChainAdapter {
     if (tokenConfig) {
       const addr = tokenConfig.addresses[this.chainId];
       if (!addr) {
+        const availableChains = Object.keys(tokenConfig.addresses).join(', ') || '(none)';
         throw new PayClawError(
           ErrorCode.TOKEN_NOT_ALLOWED,
-          `Token "${upperToken}" has no known address on chain "${this.chainId}".`,
+          `Token "${upperToken}" has no known address on chain "${this.chainId}". `
+          + `"${upperToken}" is available on: ${availableChains}. `
+          + `Use a different token or provide the raw contract address instead.`,
         );
       }
       return {
@@ -190,9 +203,11 @@ export class EVMAdapter extends ChainAdapter {
       };
     }
 
+    const knownSymbols = Object.keys(TOKENS).join(', ');
     throw new PayClawError(
       ErrorCode.TOKEN_NOT_ALLOWED,
-      `Unrecognized token: "${tokenInput}". Use a known symbol (USDC, USDT, ETH, BNB) or a 0x address.`,
+      `Unrecognized token: "${tokenInput}". `
+      + `Use a known symbol (${knownSymbols}) or a raw 0x contract address.`,
     );
   }
 
@@ -292,7 +307,9 @@ export class EVMAdapter extends ChainAdapter {
       if (receipt.status !== 'success') {
         throw new PayClawError(
           ErrorCode.TRANSACTION_FAILED,
-          `createWallet transaction reverted. Hash: ${hash}`,
+          `createWallet transaction reverted (hash: ${hash}). `
+          + `This can happen if a wallet with the same owner/agent/salt already exists, or if the owner has insufficient gas. `
+          + `Check the transaction on the block explorer for details.`,
         );
       }
 
@@ -326,7 +343,8 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.TRANSACTION_FAILED,
-        `Failed to create wallet: ${(err as Error).message}`,
+        `Failed to create wallet: ${(err as Error).message}. `
+        + `Ensure the owner account has enough native token for gas and that the RPC endpoint is reachable.`,
         { originalError: String(err) },
       );
     }
@@ -345,14 +363,16 @@ export class EVMAdapter extends ChainAdapter {
       if (!owner) {
         throw new PayClawError(
           ErrorCode.WALLET_NOT_FOUND,
-          `No AgentWallet found at address ${address}.`,
+          `No AgentWallet found at address ${address}. `
+          + `Verify the address is correct and that the wallet was deployed on chain "${this.chainId}".`,
         );
       }
     } catch (err) {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.WALLET_NOT_FOUND,
-        `Could not verify wallet at ${address}: ${(err as Error).message}`,
+        `Could not verify wallet at ${address}: ${(err as Error).message}. `
+        + `This may indicate the address is not a valid AgentWallet contract, or the RPC endpoint is unreachable.`,
       );
     }
   }
@@ -393,7 +413,9 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.TRANSACTION_FAILED,
-        `pay() failed: ${(err as Error).message}`,
+        `pay() failed: ${(err as Error).message}. `
+        + `Check that the wallet has sufficient ${params.token} balance, the agent is not revoked, `
+        + `and the payment does not exceed policy limits.`,
         { wallet, params },
       );
     }
@@ -431,7 +453,9 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.TRANSACTION_FAILED,
-        `swap() failed: ${(err as Error).message}`,
+        `swap() failed: ${(err as Error).message}. `
+        + `Check that swaps are enabled in the policy, the wallet has sufficient ${params.from} balance, `
+        + `and the swap amount does not exceed policy limits. Slippage was set to ${params.slippage ?? 0.5}%.`,
         { wallet, params },
       );
     }
@@ -588,7 +612,8 @@ export class EVMAdapter extends ChainAdapter {
     } catch (err) {
       throw new PayClawError(
         ErrorCode.RPC_ERROR,
-        `Failed to fetch transactions: ${(err as Error).message}`,
+        `Failed to fetch transactions for wallet ${wallet}: ${(err as Error).message}. `
+        + `The RPC endpoint may be unreachable or rate-limited. Try again or use a different RPC URL.`,
         { wallet },
       );
     }
@@ -642,7 +667,8 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.RPC_ERROR,
-        `Failed to fetch remaining limits: ${(err as Error).message}`,
+        `Failed to fetch remaining limits for wallet ${wallet}: ${(err as Error).message}. `
+        + `Ensure the PolicyRegistry contract is deployed at ${this.addresses.policyRegistry} and the RPC is reachable.`,
         { wallet },
       );
     }
@@ -673,7 +699,8 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.TRANSACTION_FAILED,
-        `approve() failed: ${(err as Error).message}`,
+        `approve() failed for request "${requestId}": ${(err as Error).message}. `
+        + `Verify the request ID is valid, the request has not already been resolved, and the caller is the wallet owner.`,
         { wallet, requestId },
       );
     }
@@ -700,7 +727,8 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.TRANSACTION_FAILED,
-        `deny() failed: ${(err as Error).message}`,
+        `deny() failed for request "${requestId}": ${(err as Error).message}. `
+        + `Verify the request ID is valid, the request has not already been resolved, and the caller is the wallet owner.`,
         { wallet, requestId },
       );
     }
@@ -728,7 +756,8 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.TRANSACTION_FAILED,
-        `updatePolicy() failed: ${(err as Error).message}`,
+        `updatePolicy() failed: ${(err as Error).message}. `
+        + `Only the wallet owner can update policies. Ensure the owner account is configured and has gas.`,
         { wallet },
       );
     }
@@ -755,7 +784,8 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.TRANSACTION_FAILED,
-        `revokeAgent() failed: ${(err as Error).message}`,
+        `revokeAgent() failed: ${(err as Error).message}. `
+        + `Only the wallet owner can revoke the agent. This action is irreversible — the agent will lose all access.`,
         { wallet },
       );
     }
@@ -783,7 +813,8 @@ export class EVMAdapter extends ChainAdapter {
       if (err instanceof PayClawError) throw err;
       throw new PayClawError(
         ErrorCode.TRANSACTION_FAILED,
-        `emergencyWithdraw() failed: ${(err as Error).message}`,
+        `emergencyWithdraw() failed for token "${token}": ${(err as Error).message}. `
+        + `Only the wallet owner can perform emergency withdrawals. Ensure the owner account is configured and has gas.`,
         { wallet, token },
       );
     }

@@ -44,4 +44,14 @@ export class PayClawError extends Error {
     super(`[${code}] ${message}`);
     this.name = 'PayClawError';
   }
+
+  /**
+   * Creates a `NOT_IMPLEMENTED` error for methods that are planned but not yet available.
+   *
+   * @param method - Name of the unimplemented method (e.g. `'SolanaAdapter.pay'`)
+   * @returns A `PayClawError` with code `NOT_IMPLEMENTED`
+   */
+  static notImplemented(method: string): PayClawError {
+    return new PayClawError(ErrorCode.NOT_IMPLEMENTED, `${method} is not yet implemented`);
+  }
 }
