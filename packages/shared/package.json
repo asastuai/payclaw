@@ -1,7 +1,7 @@
 {
-  "name": "@payclaw/shared",
+  "name": "payclaw-shared",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "description": "Shared types, constants, and chain configurations for PayClaw",
   "license": "Apache-2.0",
   "main": "./dist/index.js",

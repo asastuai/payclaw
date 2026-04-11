@@ -1,6 +1,6 @@
 {
-  "name": "@payclaw/sdk",
-  "version": "0.0.1",
+  "name": "payclaw-ai",
+  "version": "0.1.0",
   "description": "AI Agent Wallet SDK — Give your AI agent a wallet with programmable rules",
   "license": "Apache-2.0",
   "main": "./dist/index.js",
@@ -21,7 +21,7 @@
     "test": "echo 'No tests yet'"
   },
   "dependencies": {
-    "@payclaw/shared": "workspace:*",
+    "payclaw-shared": "^0.0.1",
     "viem": "^2.47.12"
   },
   "devDependencies": {

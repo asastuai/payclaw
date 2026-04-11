@@ -6,6 +6,7 @@
 
 Open-source SDK for AI agent payments with programmable rules and human oversight.
 
+[![npm](https://img.shields.io/npm/v/payclaw-ai.svg)](https://www.npmjs.com/package/payclaw-ai)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-24%20passing-brightgreen.svg)](#development)
 [![Security](https://img.shields.io/badge/security-audited-brightgreen.svg)](SECURITY_AUDIT.md)
@@ -30,11 +31,11 @@ AI agents can think, plan, and execute — but they can't pay for anything. When
 ## Quickstart
 
 ```bash
-npm install @payclaw/sdk
+npm install payclaw-ai
 ```
 
 ```typescript
-import { PayClaw } from '@payclaw/sdk';
+import { PayClaw } from 'payclaw-ai';
 
 const payclaw = new PayClaw({ chain: 'base' });
 
@@ -191,8 +192,8 @@ pnpm --filter @payclaw/dashboard dev
 - [x] Working examples (basic payment, policies, approvals)
 - [x] Dashboard scaffold (Next.js)
 - [x] Playground scaffold
-- [ ] npm publish (`@payclaw/sdk`)
-- [ ] Contract verification on BaseScan
+- [x] npm publish ([`payclaw-ai`](https://www.npmjs.com/package/payclaw-ai))
+- [x] Contract verification on BaseScan
 - [ ] Solana program implementation
 - [ ] Dashboard MVP (wallet management + approvals)
 - [ ] Interactive playground with live testnet
