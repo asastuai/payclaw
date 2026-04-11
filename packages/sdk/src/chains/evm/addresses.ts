@@ -18,9 +18,9 @@ export const CONTRACT_ADDRESSES: Record<string, ContractAddresses> = {
     approvalQueue: ZERO,
   },
   'base-sepolia': {
-    factory: '0x311CBD67E108870f4Ce12a6FaDf6eab6197d53a0',
-    policyRegistry: '0xdd431B147e4D39cccAe587f634f4356f455977c4',
-    approvalQueue: '0xBFC5Eb54A57cA2CCa4E070861E4B898D14884542',
+    factory: '0x86AA9e4B4A1B25250625146654cf8088b6053F5D',
+    policyRegistry: '0x8eFd0F8C22be60DB1eb21fb9BfA316C192c76C13',
+    approvalQueue: '0xCBF434A8D9fC47C0FCc9B77dda28e6Fe44a04448',
   },
   bsc: {
     factory: ZERO,

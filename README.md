@@ -11,7 +11,7 @@ Open-source SDK for AI agent payments with programmable rules and human oversigh
 [![Security](https://img.shields.io/badge/security-audited-brightgreen.svg)](SECURITY_AUDIT.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.26-363636.svg)](https://soliditylang.org/)
-[![Base Sepolia](https://img.shields.io/badge/Base%20Sepolia-deployed-0052FF.svg)](https://sepolia.basescan.org/address/0x311CBD67E108870f4Ce12a6FaDf6eab6197d53a0)
+[![Base Sepolia](https://img.shields.io/badge/Base%20Sepolia-verified-0052FF.svg)](https://sepolia.basescan.org/address/0x86AA9e4B4A1B25250625146654cf8088b6053F5D)
 [![BSC](https://img.shields.io/badge/BSC-planned-F0B90B.svg)](https://www.bnbchain.org/)
 [![Solana](https://img.shields.io/badge/Solana-planned-9945FF.svg)](https://solana.com)
 
@@ -173,9 +173,10 @@ pnpm --filter @payclaw/dashboard dev
 
 | Contract | Address |
 |----------|---------|
-| Factory | [`0x311CBD67...`](https://sepolia.basescan.org/address/0x311CBD67E108870f4Ce12a6FaDf6eab6197d53a0) |
-| PolicyRegistry | [`0xdd431B14...`](https://sepolia.basescan.org/address/0xdd431B147e4D39cccAe587f634f4356f455977c4) |
-| ApprovalQueue | [`0xBFC5Eb54...`](https://sepolia.basescan.org/address/0xBFC5Eb54A57cA2CCa4E070861E4B898D14884542) |
+| Factory | [`0x86AA9e4B...`](https://sepolia.basescan.org/address/0x86AA9e4B4A1B25250625146654cf8088b6053F5D) |
+| PolicyRegistry | [`0x8eFd0F8C...`](https://sepolia.basescan.org/address/0x8eFd0F8C22be60DB1eb21fb9BfA316C192c76C13) |
+| ApprovalQueue | [`0xCBF434A8...`](https://sepolia.basescan.org/address/0xCBF434A8D9fC47C0FCc9B77dda28e6Fe44a04448) |
+| AgentWallet (impl) | [`0x69dBdf8e...`](https://sepolia.basescan.org/address/0x69dBdf8e096c8666BDE270A506447B619Cc5D28D) |
 
 ## Roadmap
 
