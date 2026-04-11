@@ -1,0 +1,40 @@
+{
+  "name": "@payclaw/sdk",
+  "version": "0.0.1",
+  "description": "AI Agent Wallet SDK — Give your AI agent a wallet with programmable rules",
+  "license": "Apache-2.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'No tests yet'"
+  },
+  "dependencies": {
+    "@payclaw/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "wallet",
+    "sdk",
+    "payments",
+    "stablecoins",
+    "erc-4337",
+    "account-abstraction",
+    "base",
+    "solana",
+    "bsc"
+  ]
+}

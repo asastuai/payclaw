@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Foundry
+packages/contracts-evm/cache/
+packages/contracts-evm/out/
+packages/contracts-evm/broadcast/
+
+# Solana/Anchor
+packages/contracts-solana/target/
+packages/contracts-solana/.anchor/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+profile-readme.md

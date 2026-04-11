@@ -1,0 +1,20 @@
+[package]
+name = "payclaw"
+version = "0.1.0"
+description = "PayClaw AI Agent Wallet - Solana Program"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "payclaw"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { workspace = true }
+anchor-spl = { workspace = true }
