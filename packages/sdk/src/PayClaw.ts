@@ -35,8 +35,18 @@ export class PayClaw {
     return new AgentWallet(result.address, this.adapter, config.policies);
   }
 
-  async loadWallet(address: string, policies: WalletConfig['policies']): Promise<AgentWallet> {
+  async loadWallet(
+    address: string,
+    policies: WalletConfig['policies'],
+    keys?: { ownerPrivateKey: string; agentPrivateKey: string },
+  ): Promise<AgentWallet> {
     await this.adapter.loadWallet(address);
+
+    // If keys are provided and the adapter supports setting accounts, configure them
+    if (keys && this.adapter instanceof EVMAdapter) {
+      (this.adapter as EVMAdapter).setAccounts(keys.ownerPrivateKey, keys.agentPrivateKey);
+    }
+
     return new AgentWallet(address, this.adapter, policies);
   }
 }
