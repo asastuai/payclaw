@@ -7,11 +7,13 @@
 Open-source SDK for AI agent payments with programmable rules and human oversight.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-24%20passing-brightgreen.svg)](#development)
+[![Security](https://img.shields.io/badge/security-audited-brightgreen.svg)](SECURITY_AUDIT.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.26-363636.svg)](https://soliditylang.org/)
-[![Base](https://img.shields.io/badge/Base-L2-0052FF.svg)](https://base.org)
-[![BSC](https://img.shields.io/badge/BSC-Mainnet-F0B90B.svg)](https://www.bnbchain.org/)
-[![Solana](https://img.shields.io/badge/Solana-Mainnet-9945FF.svg)](https://solana.com)
+[![Base Sepolia](https://img.shields.io/badge/Base%20Sepolia-deployed-0052FF.svg)](https://sepolia.basescan.org/address/0x311CBD67E108870f4Ce12a6FaDf6eab6197d53a0)
+[![BSC](https://img.shields.io/badge/BSC-planned-F0B90B.svg)](https://www.bnbchain.org/)
+[![Solana](https://img.shields.io/badge/Solana-planned-9945FF.svg)](https://solana.com)
 
 [Quickstart](#quickstart) · [Playground](https://payclaw.dev/playground) · [Docs](https://payclaw.dev/docs) · [Dashboard](https://payclaw.dev)
 
@@ -135,7 +137,9 @@ payclaw/
 | `PolicyRegistry` | On-chain rules engine — checks every transaction |
 | `ApprovalQueue` | Pending transactions waiting for human approval |
 
-**16 Foundry tests** covering all core flows: payments, limits, approvals, batch operations, emergency withdrawals, access control, and daily reset.
+**24 Foundry tests** (16 unit + 5 fuzz + 3 invariant) covering: payments, limits, approvals, batch operations, emergency withdrawals, access control, daily reset, and 38,400 random call sequences.
+
+**[Security audited](SECURITY_AUDIT.md)** — 3 critical + 4 high findings identified and fixed.
 
 ## Use Cases
 
@@ -165,19 +169,34 @@ cd packages/contracts-evm && forge test
 pnpm --filter @payclaw/dashboard dev
 ```
 
+## Deployed Contracts (Base Sepolia)
+
+| Contract | Address |
+|----------|---------|
+| Factory | [`0x311CBD67...`](https://sepolia.basescan.org/address/0x311CBD67E108870f4Ce12a6FaDf6eab6197d53a0) |
+| PolicyRegistry | [`0xdd431B14...`](https://sepolia.basescan.org/address/0xdd431B147e4D39cccAe587f634f4356f455977c4) |
+| ApprovalQueue | [`0xBFC5Eb54...`](https://sepolia.basescan.org/address/0xBFC5Eb54A57cA2CCa4E070861E4B898D14884542) |
+
 ## Roadmap
 
 - [x] Smart contracts (EVM) — AgentWallet, Factory, PolicyRegistry, ApprovalQueue
-- [x] 16 Foundry tests passing
-- [x] TypeScript SDK scaffold with chain abstraction
+- [x] 24 tests passing (16 unit + 5 fuzz + 3 invariant)
+- [x] Security audit — 7 findings fixed ([report](SECURITY_AUDIT.md))
+- [x] TypeScript SDK with viem — full contract integration
+- [x] Deploy to Base Sepolia testnet
+- [x] End-to-end integration test on live testnet
+- [x] Documentation — 13 pages (concepts, API reference, guides)
+- [x] JSDoc + NatSpec — full API documentation
+- [x] Working examples (basic payment, policies, approvals)
 - [x] Dashboard scaffold (Next.js)
 - [x] Playground scaffold
-- [ ] SDK ↔ contract integration (viem + ERC-4337)
-- [ ] Deploy to Base Sepolia testnet
+- [ ] npm publish (`@payclaw/sdk`)
+- [ ] Contract verification on BaseScan
 - [ ] Solana program implementation
 - [ ] Dashboard MVP (wallet management + approvals)
-- [ ] Interactive playground
-- [ ] Mainnet deployment + security audit
+- [ ] Interactive playground with live testnet
+- [ ] BSC testnet deployment
+- [ ] Mainnet deployment
 
 ## Why PayClaw?
 
