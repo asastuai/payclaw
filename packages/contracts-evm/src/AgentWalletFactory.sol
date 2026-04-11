@@ -4,6 +4,8 @@ pragma solidity ^0.8.26;
 import { AgentWallet } from "./AgentWallet.sol";
 import { IPolicyRegistry } from "./interfaces/IPolicyRegistry.sol";
 import { IApprovalQueue } from "./interfaces/IApprovalQueue.sol";
+import { PolicyRegistry } from "./PolicyRegistry.sol";
+import { ApprovalQueue } from "./ApprovalQueue.sol";
 
 contract AgentWalletFactory {
     event WalletCreated(address indexed wallet, address indexed owner, address indexed agent, bytes32 salt);
@@ -16,6 +18,10 @@ contract AgentWalletFactory {
         implementation = address(new AgentWallet());
         policyRegistry = _policyRegistry;
         approvalQueue = _approvalQueue;
+
+        // C-3: Register this factory as the only authorized registrar
+        PolicyRegistry(_policyRegistry).setFactory(address(this));
+        ApprovalQueue(_approvalQueue).setFactory(address(this));
     }
 
     function createWallet(

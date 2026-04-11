@@ -18,6 +18,11 @@ quote_style = "double"
 tab_width = 4
 wrap_comments = true
 
+[invariant]
+runs = 256
+depth = 50
+fail_on_revert = false
+
 [rpc_endpoints]
 base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 base = "${BASE_RPC_URL}"

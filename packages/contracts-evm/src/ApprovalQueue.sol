@@ -12,6 +12,16 @@ contract ApprovalQueue is IApprovalQueue {
     mapping(address => uint256[]) private _walletPendingIds;
     mapping(address => address) private _walletOwners;
 
+    /// @dev C-3: Only the factory can register new wallets
+    address public factory;
+
+    /// @dev C-3: Set the factory address (can only be set once)
+    function setFactory(address _factory) external {
+        require(factory == address(0), "ApprovalQueue: factory already set");
+        require(_factory != address(0), "ApprovalQueue: zero address");
+        factory = _factory;
+    }
+
     modifier onlyWalletOrOwner(uint256 requestId) {
         address wallet = _requests[requestId].wallet;
         require(
@@ -22,6 +32,9 @@ contract ApprovalQueue is IApprovalQueue {
     }
 
     function registerWallet(address wallet, address walletOwner) external {
+        // C-2 + C-3: Only factory can register, prevent re-registration
+        require(msg.sender == factory, "ApprovalQueue: only factory");
+        require(_walletOwners[wallet] == address(0), "ApprovalQueue: already registered");
         _walletOwners[wallet] = walletOwner;
     }
 

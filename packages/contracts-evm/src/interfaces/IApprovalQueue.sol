@@ -25,6 +25,8 @@ interface IApprovalQueue {
     event RequestDenied(uint256 indexed requestId);
     event RequestExpired(uint256 indexed requestId);
 
+    function setFactory(address _factory) external;
+
     function registerWallet(address wallet, address walletOwner) external;
 
     function createRequest(

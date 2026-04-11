@@ -17,6 +17,11 @@ contract AgentWallet is IAgentWallet {
     bool private _initialized;
     bool private _reentrancyLock;
 
+    /// @dev Lock the implementation contract so it cannot be initialized directly (H-4)
+    constructor() {
+        _initialized = true;
+    }
+
     modifier onlyOwner() {
         require(msg.sender == _owner, "AgentWallet: not owner");
         _;
@@ -86,6 +91,9 @@ contract AgentWallet is IAgentWallet {
         uint256 minAmountOut,
         address router
     ) external onlyAgent nonReentrant {
+        // H-2: Require minAmountOut > 0 to prevent router from stealing tokenIn
+        require(minAmountOut > 0, "AgentWallet: minAmountOut must be > 0");
+
         // Check policy allows swaps
         IPolicyRegistry.Policy memory policy = policyRegistry.getPolicy(address(this));
         require(policy.swapsEnabled, "AgentWallet: swaps disabled");
@@ -108,8 +116,8 @@ contract AgentWallet is IAgentWallet {
         );
         require(result.allowed, result.reason);
 
-        // Approve router to spend tokenIn
-        IERC20(tokenIn).approve(router, amountIn);
+        // Approve router to spend tokenIn (C-1: use safe approve)
+        _safeApprove(tokenIn, router, amountIn);
 
         // Record balance before swap
         uint256 balanceBefore = IERC20(tokenOut).balanceOf(address(this));
@@ -127,6 +135,9 @@ contract AgentWallet is IAgentWallet {
             )
         );
         require(success, "AgentWallet: swap failed");
+
+        // H-1: Reset approval to 0 after swap to prevent leftover allowance attacks
+        _safeApprove(tokenIn, router, 0);
 
         uint256 amountOut = IERC20(tokenOut).balanceOf(address(this)) - balanceBefore;
         require(amountOut >= minAmountOut, "AgentWallet: insufficient output");
@@ -169,6 +180,12 @@ contract AgentWallet is IAgentWallet {
         IApprovalQueue.ApprovalRequest memory req = approvalQueue.getRequest(requestId);
         require(req.wallet == address(this), "AgentWallet: wrong wallet");
 
+        // H-3: Re-check policy at execution time (policy may have changed since request creation)
+        IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransaction(
+            address(this), req.to, req.token, req.amount
+        );
+        require(result.allowed, "AgentWallet: policy check failed on approval");
+
         approvalQueue.approveRequest(requestId);
 
         // Execute the approved transaction
@@ -208,10 +225,10 @@ contract AgentWallet is IAgentWallet {
             require(success, "AgentWallet: ETH transfer failed");
             emit EmergencyWithdraw(token, balance);
         } else {
-            // Withdraw ERC-20
+            // Withdraw ERC-20 (C-1: use safe transfer for non-standard tokens)
             uint256 balance = IERC20(token).balanceOf(address(this));
             require(balance > 0, "AgentWallet: no token balance");
-            IERC20(token).transfer(_owner, balance);
+            _safeTransfer(token, _owner, balance);
             emit EmergencyWithdraw(token, balance);
         }
     }
@@ -246,10 +263,27 @@ contract AgentWallet is IAgentWallet {
             (bool success,) = to.call{ value: amount }("");
             require(success, "AgentWallet: ETH transfer failed");
         } else {
-            // ERC-20
-            bool success = IERC20(token).transfer(to, amount);
-            require(success, "AgentWallet: token transfer failed");
+            // C-1: Use safe transfer to handle non-standard ERC-20s (USDT, etc.)
+            _safeTransfer(token, to, amount);
         }
+    }
+
+    /// @dev Safe ERC-20 transfer that handles tokens returning no data (e.g. USDT)
+    function _safeTransfer(address token, address to, uint256 amount) internal {
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount)
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))),
+            "AgentWallet: token transfer failed");
+    }
+
+    /// @dev Safe ERC-20 approve that handles tokens returning no data
+    function _safeApprove(address token, address spender, uint256 amount) internal {
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(IERC20(token).approve.selector, spender, amount)
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))),
+            "AgentWallet: token approve failed");
     }
 
     function _makePath(address tokenIn, address tokenOut) internal pure returns (address[] memory) {

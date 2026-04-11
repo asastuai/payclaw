@@ -11,6 +11,9 @@ contract PolicyRegistry is IPolicyRegistry {
 
     mapping(address wallet => address) private _walletOwners;
 
+    /// @dev C-3: Only the factory can register new wallets
+    address public factory;
+
     modifier onlyWalletOrOwner(address wallet) {
         require(
             msg.sender == wallet || msg.sender == _walletOwners[wallet],
@@ -19,7 +22,16 @@ contract PolicyRegistry is IPolicyRegistry {
         _;
     }
 
+    /// @dev C-3: Set the factory address (can only be set once)
+    function setFactory(address _factory) external {
+        require(factory == address(0), "PolicyRegistry: factory already set");
+        require(_factory != address(0), "PolicyRegistry: zero address");
+        factory = _factory;
+    }
+
     function registerWallet(address wallet, address walletOwner, Policy calldata policy) external {
+        // C-3: Only factory can register wallets
+        require(msg.sender == factory, "PolicyRegistry: only factory");
         require(_walletOwners[wallet] == address(0), "PolicyRegistry: already registered");
         _walletOwners[wallet] = walletOwner;
         _policies[wallet] = policy;

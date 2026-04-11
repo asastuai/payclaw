@@ -21,6 +21,8 @@ interface IPolicyRegistry {
 
     event PolicySet(address indexed wallet, bytes32 policyHash);
 
+    function setFactory(address _factory) external;
+
     function registerWallet(address wallet, address walletOwner, Policy calldata policy) external;
 
     function getPolicy(address wallet) external view returns (Policy memory);
