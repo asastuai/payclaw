@@ -76,7 +76,8 @@ contract FuzzTest is Test {
         vm.prank(agent);
         w.pay(recipient, address(usdc), amount, bytes32("fuzz-within"));
 
-        assertEq(usdc.balanceOf(recipient), recipientBefore + amount, "recipient should receive amount");
+        uint256 fee = (amount * 30) / 10000;
+        assertEq(usdc.balanceOf(recipient), recipientBefore + amount - fee, "recipient should receive amount minus fee");
         assertEq(w.dailySpent(), amount, "dailySpent should equal amount");
     }
 

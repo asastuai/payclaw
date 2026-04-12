@@ -97,16 +97,20 @@ contract AgentWalletTest is Test {
     // -------------------------------------------------------
     function test_payWithinLimits() public {
         uint256 amount = 25e6;
+        uint256 fee = (amount * 30) / 10000; // 0.3% protocol fee
+        uint256 netAmount = amount - fee;
         uint256 recipientBefore = usdc.balanceOf(recipient);
+        address feeRecipient = wallet.FEE_RECIPIENT();
 
         vm.expectEmit(true, true, false, true, address(wallet));
-        emit IAgentWallet.PaymentExecuted(recipient, address(usdc), amount, bytes32("test"));
+        emit IAgentWallet.PaymentExecuted(recipient, address(usdc), netAmount, bytes32("test"));
 
         vm.prank(agent);
         wallet.pay(recipient, address(usdc), amount, bytes32("test"));
 
-        assertEq(usdc.balanceOf(recipient), recipientBefore + amount, "recipient balance");
-        assertEq(wallet.dailySpent(), amount, "dailySpent");
+        assertEq(usdc.balanceOf(recipient), recipientBefore + netAmount, "recipient balance");
+        assertGt(usdc.balanceOf(feeRecipient), 0, "fee recipient got fee");
+        assertEq(wallet.dailySpent(), amount, "dailySpent tracks gross amount");
     }
 
     // -------------------------------------------------------
@@ -200,8 +204,9 @@ contract AgentWalletTest is Test {
         vm.prank(owner);
         wallet.approveRequest(requestId);
 
-        // Transfer should have happened
-        assertEq(usdc.balanceOf(recipient), recipientBefore + amount, "recipient received");
+        // Transfer should have happened (minus 0.3% protocol fee)
+        uint256 fee = (amount * 30) / 10000;
+        assertEq(usdc.balanceOf(recipient), recipientBefore + amount - fee, "recipient received");
         assertEq(wallet.pendingRequestCount(), 0, "no pending requests");
 
         // Request status should be Approved
@@ -271,7 +276,7 @@ contract AgentWalletTest is Test {
         // Pay to allowed recipient - succeeds
         vm.prank(agent);
         w.pay(recipient, address(usdc), 25e6, bytes32(0));
-        assertEq(usdc.balanceOf(recipient), 25e6, "allowed recipient received");
+        assertEq(usdc.balanceOf(recipient), 25e6 - (25e6 * 30) / 10000, "allowed recipient received");
 
         // Pay to non-allowed recipient - reverts
         vm.prank(agent);
@@ -317,7 +322,7 @@ contract AgentWalletTest is Test {
 
         vm.prank(agent);
         w.pay(recipient, address(usdc), 25e6, bytes32(0));
-        assertEq(usdc.balanceOf(recipient), 50e6, "recipient received after cooldown");
+        assertEq(usdc.balanceOf(recipient), 50e6 - 2 * ((25e6 * 30) / 10000), "recipient received after cooldown");
     }
 
     // -------------------------------------------------------
@@ -406,9 +411,10 @@ contract AgentWalletTest is Test {
         vm.prank(agent);
         wallet.batchPay(tos, tokens, amounts);
 
-        assertEq(usdc.balanceOf(recipient), 10e6, "recipient1");
-        assertEq(usdc.balanceOf(recipient2), 20e6, "recipient2");
-        assertEq(usdc.balanceOf(recipient3), 30e6, "recipient3");
+        // Recipients receive amount minus 0.3% protocol fee
+        assertEq(usdc.balanceOf(recipient), 10e6 - (10e6 * 30) / 10000, "recipient1");
+        assertEq(usdc.balanceOf(recipient2), 20e6 - (20e6 * 30) / 10000, "recipient2");
+        assertEq(usdc.balanceOf(recipient3), 30e6 - (30e6 * 30) / 10000, "recipient3");
         assertEq(wallet.dailySpent(), 60e6, "dailySpent after batch");
     }
 
