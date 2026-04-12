@@ -24,9 +24,11 @@ Open-source SDK for AI agent payments with programmable rules and human oversigh
 
 ## The Problem
 
-AI agents can think, plan, and execute — but they can't pay for anything. When your agent needs to buy an API call, pay a supplier, or process a refund, it stops and waits for a human.
+AI agents can already pay. Protocols like [x402](https://x402.org) solved the payment rail — agents make HTTP requests, pay in stablecoins, get the resource. That works.
 
-**PayClaw fixes this.** One SDK. Ten lines of code. Your agent gets a wallet with rules you control.
+**What doesn't exist is the control layer.** When your agent can pay autonomously, who sets the limits? Who approves large transactions? What stops a compromised agent from draining the wallet?
+
+x402 is Visa — the rail that moves money. **PayClaw is the corporate expense system** — who can spend what, how much, to whom, and when they need human approval. All enforced on-chain by smart contracts, not application code.
 
 ## Quickstart
 
