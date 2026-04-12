@@ -16,7 +16,7 @@ Open-source SDK for AI agent payments with programmable rules and human oversigh
 [![BSC](https://img.shields.io/badge/BSC-planned-F0B90B.svg)](https://www.bnbchain.org/)
 [![Solana](https://img.shields.io/badge/Solana-planned-9945FF.svg)](https://solana.com)
 
-[Quickstart](#quickstart) · [Playground](https://payclaw.dev/playground) · [Docs](https://payclaw.dev/docs) · [Dashboard](https://payclaw.dev)
+[Quickstart](#quickstart) · [Security Audit](SECURITY_AUDIT.md) · [Examples](examples/) · [npm](https://www.npmjs.com/package/payclaw-ai)
 
 </div>
 
