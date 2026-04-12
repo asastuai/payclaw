@@ -33,13 +33,6 @@ contract AgentWallet is IAgentWallet {
     /// @dev Reentrancy guard lock
     bool private _reentrancyLock;
 
-    /// @notice Protocol fee in basis points (0.3% = 30 bps)
-    uint256 public constant PROTOCOL_FEE_BPS = 30;
-    /// @notice Maximum fee cap: 10000 bps = 100%
-    uint256 private constant BPS_DENOMINATOR = 10000;
-    /// @notice Address that receives protocol fees
-    address public constant FEE_RECIPIENT = 0x340D746f9d59cF1bAde407a7660C68E53ddB967A;
-
     /// @dev Lock the implementation contract so it cannot be initialized directly (H-4)
     constructor() {
         _initialized = true;
@@ -112,11 +105,11 @@ contract AgentWallet is IAgentWallet {
             return;
         }
 
-        // Execute transfer with protocol fee
-        (uint256 netAmount,) = _transferWithFee(token, to, amount);
+        // Execute transfer
+        _transferToken(token, to, amount);
         policyRegistry.recordSpend(address(this), usdValue);
 
-        emit PaymentExecuted(to, token, netAmount, memo);
+        emit PaymentExecuted(to, token, amount, memo);
     }
 
     /// @inheritdoc IAgentWallet
@@ -209,10 +202,10 @@ contract AgentWallet is IAgentWallet {
 
             require(result.allowed && !result.needsApproval, "AgentWallet: batch item rejected");
 
-            (uint256 netAmount,) = _transferWithFee(tokens[i], tos[i], amounts[i]);
+            _transferToken(tokens[i], tos[i], amounts[i]);
             policyRegistry.recordSpend(address(this), usdValue);
 
-            emit PaymentExecuted(tos[i], tokens[i], netAmount, bytes32(0));
+            emit PaymentExecuted(tos[i], tokens[i], amounts[i], bytes32(0));
         }
     }
 
@@ -233,8 +226,8 @@ contract AgentWallet is IAgentWallet {
 
         approvalQueue.approveRequest(requestId);
 
-        // Execute the approved transaction with protocol fee
-        (uint256 netAmount,) = _transferWithFee(req.token, req.to, req.amount);
+        // Execute the approved transaction
+        _transferToken(req.token, req.to, req.amount);
         policyRegistry.recordSpend(address(this), req.amount);
 
         emit PaymentExecuted(req.to, req.token, req.amount, req.memo);
@@ -314,22 +307,6 @@ contract AgentWallet is IAgentWallet {
     }
 
     // --- Internal ---
-
-    /// @dev Transfers `amount` minus protocol fee to `to`, and fee to FEE_RECIPIENT.
-    /// @param token The ERC-20 token address (address(0) for native ETH)
-    /// @param to The recipient address
-    /// @param amount The gross amount (fee is deducted from this)
-    /// @return netAmount The amount received by the recipient
-    /// @return fee The protocol fee charged
-    function _transferWithFee(address token, address to, uint256 amount) internal returns (uint256 netAmount, uint256 fee) {
-        fee = (amount * PROTOCOL_FEE_BPS) / BPS_DENOMINATOR;
-        netAmount = amount - fee;
-
-        _transferToken(token, to, netAmount);
-        if (fee > 0) {
-            _transferToken(token, FEE_RECIPIENT, fee);
-        }
-    }
 
     /// @dev Transfers `amount` of `token` to `to`. Uses native ETH transfer for address(0),
     ///      otherwise uses safe ERC-20 transfer to handle non-standard tokens (C-1).
