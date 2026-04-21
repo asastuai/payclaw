@@ -208,6 +208,16 @@ McKinsey projects **$3-5 trillion** in agentic commerce by 2030. Google, Stripe,
 
 **PayClaw is the open-source alternative.** No enterprise contracts. No sales calls. Just `npm install` and your agent can pay.
 
+## Related agent-infra repositories
+
+PayClaw is the **control layer** of a small stack of agent-native primitives:
+
+- [**PayClaw**](https://github.com/asastuai/payclaw) — *(this repo)* — agent wallet SDK with programmable rules
+- [**BaseOracle**](https://github.com/asastuai/BaseOracle) — pay-per-query data feeds for agents (x402)
+- [**TrustLayer**](https://github.com/asastuai/TrustLayer) — trust infrastructure: skill audit, test harness, SLA monitor, escrow
+
+PayClaw + BaseOracle + TrustLayer together give an agent everything it needs to transact safely with unfamiliar counterparties: money rails, market data, and verifiable trust.
+
 ## License
 
 Apache 2.0 — use it for anything. Patent protection included.
