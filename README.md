@@ -64,7 +64,7 @@ That's it. The agent operates. You stay in control.
 
 ---
 
-## Proof-of-Context Integration
+## ◊ Proof-of-Context Integration
 
 PayClaw includes a Proof-of-Context (PoC) verification helper. Lets agents verify a counterparty's freshness commitment before paying for stale data.
 
@@ -263,7 +263,7 @@ McKinsey projects **$3-5 trillion** in agentic commerce by 2030. Google, Stripe,
 
 **PayClaw is the open-source alternative.** No enterprise contracts. No sales calls. Just `npm install` and your agent can pay.
 
-## Part of Aletheia
+## ❖ Part of Aletheia
 
 PayClaw is the agent wallet layer of [**Aletheia**](https://github.com/asastuai/aletheia). Five sibling repos compose the rest of the stack.
 
