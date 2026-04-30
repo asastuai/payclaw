@@ -2,6 +2,18 @@ export { PayClaw } from './PayClaw';
 export { AgentWallet } from './AgentWallet';
 export { PolicyEngine } from './PolicyEngine';
 
+// Proof-of-Context — verify a counterparty's freshness commitment before paying.
+// Part of the Aletheia stack: github.com/asastuai/aletheia
+export {
+  verifyPocCommitment,
+  requireValidPoc,
+} from './poc';
+export type {
+  PocBlock,
+  PocVerdict,
+  VerifyPocOptions,
+} from './poc';
+
 // Types
 export type {
   PayClawConfig,

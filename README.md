@@ -2,21 +2,20 @@
 
 # PayClaw
 
-### Give your AI agent a wallet.
-
-Open-source SDK for AI agent payments with programmable rules and human oversight.
+### Agent wallet SDK with programmable rules, human oversight, and PoC-gated release conditions.
 
 [![npm](https://img.shields.io/npm/v/payclaw-ai.svg)](https://www.npmjs.com/package/payclaw-ai)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-24%20passing-brightgreen.svg)](#development)
+[![Foundry tests](https://img.shields.io/badge/Foundry%20tests-24%20passing-brightgreen.svg)](#tests)
+[![SDK tests](https://img.shields.io/badge/SDK%20tests-10%20passing-brightgreen.svg)](#tests)
 [![Security](https://img.shields.io/badge/security-audited-brightgreen.svg)](SECURITY_AUDIT.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.26-363636.svg)](https://soliditylang.org/)
 [![Base Sepolia](https://img.shields.io/badge/Base%20Sepolia-verified-0052FF.svg)](https://sepolia.basescan.org/address/0x86AA9e4B4A1B25250625146654cf8088b6053F5D)
-[![BSC](https://img.shields.io/badge/BSC-planned-F0B90B.svg)](https://www.bnbchain.org/)
-[![Solana](https://img.shields.io/badge/Solana-planned-9945FF.svg)](https://solana.com)
 
-[Quickstart](#quickstart) · [Security Audit](SECURITY_AUDIT.md) · [Examples](examples/) · [npm](https://www.npmjs.com/package/payclaw-ai)
+*Part of [**Aletheia**](https://github.com/asastuai/aletheia). Full stack for the agentic economics.*
+
+[Quickstart](#quickstart) · [PoC Integration](#proof-of-context-integration) · [Security Audit](SECURITY_AUDIT.md) · [Examples](examples/) · [npm](https://www.npmjs.com/package/payclaw-ai)
 
 </div>
 
@@ -62,6 +61,53 @@ await wallet.pay({
 ```
 
 That's it. The agent operates. You stay in control.
+
+---
+
+## Proof-of-Context Integration
+
+PayClaw includes a Proof-of-Context (PoC) verification helper. Lets agents verify a counterparty's freshness commitment before paying for stale data.
+
+```typescript
+import { PayClaw, verifyPocCommitment } from 'payclaw-ai';
+
+const data = await fetch('https://baseoracle.example/api/v1/prices?token=ETH').then(r => r.json());
+
+const verdict = await verifyPocCommitment(data, {
+  expectedPublicKey: BASEORACLE_OPERATOR_PUBKEY,
+  maxAgeSeconds: 30,
+});
+
+if (!verdict.valid) {
+  throw new Error(`Refusing payment: ${verdict.reason}`);
+}
+
+await wallet.pay({
+  to: '0xBaseOracleOperator',
+  token: 'USDC',
+  amount: 0.001,
+  memo: `PoC ts=${verdict.poc.timestamp}`,
+});
+```
+
+What `verifyPocCommitment` checks (in order):
+
+- `_poc` block is present.
+- Signature exists (or `allowUnsigned: true` opts in to development mode).
+- Age does not exceed `maxAgeSeconds` (or operator's declared horizon).
+- Re-computed payload hash matches the attested hash (tampering detection).
+- Ed25519 signature verifies against the canonical signing message.
+- Public key matches `expectedPublicKey` when pinned (operator identity).
+
+Each failure returns a structured `PocVerdict` with `reason` set, so the caller can distinguish `stale` from `payload_hash_mismatch` from `operator_mismatch`.
+
+This is the **SDK-side enforcement** of the PoC release condition. On-chain enforcement (a Solidity policy hook in `PolicyRegistry` calling into a verifier contract) is the next phase.
+
+Reference primitive: [proof-of-context-impl](https://github.com/asastuai/proof-of-context-impl). Position paper: [proof-of-context](https://github.com/asastuai/proof-of-context).
+
+Full example: [`examples/poc-gated-payment.ts`](examples/poc-gated-payment.ts).
+
+---
 
 ## How It Works
 
@@ -156,6 +202,16 @@ payclaw/
 
 **Procurement agent** — buys supplies from approved vendors, queues large purchases for approval.
 
+## Tests
+
+```bash
+# SDK tests (PoC verification helper, 10 tests)
+cd packages/sdk && pnpm test
+
+# Contract tests (24 Foundry tests: 16 unit + 5 fuzz + 3 invariant)
+cd packages/contracts-evm && forge test
+```
+
 ## Development
 
 ```bash
@@ -164,9 +220,6 @@ pnpm install
 
 # build everything
 pnpm build
-
-# run contract tests
-cd packages/contracts-evm && forge test
 
 # run dashboard locally
 pnpm --filter @payclaw/dashboard dev
@@ -191,11 +244,13 @@ pnpm --filter @payclaw/dashboard dev
 - [x] End-to-end integration test on live testnet
 - [x] Documentation — 13 pages (concepts, API reference, guides)
 - [x] JSDoc + NatSpec — full API documentation
-- [x] Working examples (basic payment, policies, approvals)
+- [x] Working examples (basic payment, policies, approvals, PoC-gated payment)
 - [x] Dashboard scaffold (Next.js)
 - [x] Playground scaffold
 - [x] npm publish ([`payclaw-ai`](https://www.npmjs.com/package/payclaw-ai))
 - [x] Contract verification on BaseScan
+- [x] **PoC verification helper in SDK** (10 tests passing)
+- [ ] On-chain `IPoCVerifier` contract + `PolicyRegistry` integration
 - [ ] Solana program implementation
 - [ ] Dashboard MVP (wallet management + approvals)
 - [ ] Interactive playground with live testnet
@@ -208,24 +263,23 @@ McKinsey projects **$3-5 trillion** in agentic commerce by 2030. Google, Stripe,
 
 **PayClaw is the open-source alternative.** No enterprise contracts. No sales calls. Just `npm install` and your agent can pay.
 
-## Related agent-infra repositories
+## Part of Aletheia
 
-PayClaw is the **control layer** of a small stack of agent-native primitives:
+PayClaw is the agent wallet layer of [**Aletheia**](https://github.com/asastuai/aletheia). Five sibling repos compose the rest of the stack.
 
-- [**PayClaw**](https://github.com/asastuai/payclaw) — *(this repo)* — agent wallet SDK with programmable rules
-- [**BaseOracle**](https://github.com/asastuai/BaseOracle) — pay-per-query data feeds for agents (x402)
-- [**TrustLayer**](https://github.com/asastuai/TrustLayer) — trust infrastructure: skill audit, test harness, SLA monitor, escrow
-
-PayClaw + BaseOracle + TrustLayer together give an agent everything it needs to transact safely with unfamiliar counterparties: money rails, market data, and verifiable trust.
+- [**Proof-of-Context**](https://github.com/asastuai/proof-of-context) — verification spine. The primitive PayClaw's verification helper checks against.
+- [**proof-of-context-impl**](https://github.com/asastuai/proof-of-context-impl) — Rust reference implementation of PoC.
+- [**SUR Protocol**](https://github.com/asastuai/sur-protocol) — perp DEX. Consumer of PayClaw wallets for agent trading custody.
+- [**TrustLayer**](https://github.com/asastuai/TrustLayer) — agent reputation. Uses PayClaw escrow as one of its four primitives.
+- [**BaseOracle**](https://github.com/asastuai/BaseOracle) — pay-per-query data. Recipient of PayClaw-controlled USDC payments. Producer of `f_i` PoC commitments PayClaw can verify.
+- [**Vigil**](https://github.com/asastuai/vigil) — DeFi intelligence. Same recipient + producer pattern.
 
 ## License
 
-Apache 2.0 — use it for anything. Patent protection included.
+Apache 2.0. Patent protection included.
 
 ---
 
-<div align="center">
+Built by [Juan Cruz Maisú](https://github.com/asastuai). Buenos Aires, Argentina.
 
-**Built by [asastuai](https://github.com/asastuai) from Buenos Aires 🇦🇷**
-
-</div>
+Juan Cruz Maisú ♥
