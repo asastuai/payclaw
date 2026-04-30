@@ -122,9 +122,9 @@ importers:
       '@noble/hashes':
         specifier: ^1.7.0
         version: 1.8.0
-      payclaw-shared:
-        specifier: ^0.0.1
-        version: 0.0.1
+      '@payclaw/shared':
+        specifier: workspace:*
+        version: link:../shared
       viem:
         specifier: ^2.47.12
         version: 2.47.12(typescript@5.9.3)
@@ -719,9 +719,6 @@ packages:
 
   path-parse@1.0.7:
     resolution: {integrity: sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==}
-
-  payclaw-shared@0.0.1:
-    resolution: {integrity: sha512-ycyVNUNZK23QExCqct+xg/ZcLhexOGB1dqu7gF83CmQnrn5WD+FDaEa2vAKPyQo6+xSlG/00WElLVnsZnQbKuA==}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -1384,8 +1381,6 @@ snapshots:
       - zod
 
   path-parse@1.0.7: {}
-
-  payclaw-shared@0.0.1: {}
 
   picocolors@1.1.1: {}
 

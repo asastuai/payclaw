@@ -23,7 +23,7 @@
   "dependencies": {
     "@noble/ed25519": "^2.3.0",
     "@noble/hashes": "^1.7.0",
-    "payclaw-shared": "^0.0.1",
+    "@payclaw/shared": "workspace:*",
     "viem": "^2.47.12"
   },
   "devDependencies": {

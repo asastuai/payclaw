@@ -1,15 +1,16 @@
 {
-  "name": "payclaw-shared",
+  "name": "@payclaw/shared",
   "version": "0.0.1",
   "private": false,
   "description": "Shared types, constants, and chain configurations for PayClaw",
   "license": "Apache-2.0",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   },
   "scripts": {
