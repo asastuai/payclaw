@@ -101,7 +101,7 @@ What `verifyPocCommitment` checks (in order):
 
 Each failure returns a structured `PocVerdict` with `reason` set, so the caller can distinguish `stale` from `payload_hash_mismatch` from `operator_mismatch`.
 
-This is the **SDK-side enforcement** of the PoC release condition. On-chain enforcement (a Solidity policy hook in `PolicyRegistry` calling into a verifier contract) is the next phase.
+This is the **SDK-side enforcement** of the PoC release condition. On-chain enforcement is wired in two phases. **Phase 7a** ships the verifier contract `PoCVerifier.sol` (12 Foundry tests passing). **Phase 7b** wires `PolicyRegistry × PoCVerifier` so that policy evaluation can call `PoCVerifier.isFresh` as part of `checkTransactionWithPoC` (15 additional tests passing, opt-in per wallet via `setPocRequired`). **AgentWallet routing** through `checkTransactionWithPoC` is **planned (Phase 7c)** — at the time of this commit AgentWallet itself still calls the legacy `checkTransaction` method. Integrators consuming the policy contract directly can use the PoC-aware variant today; agent flows that route through the wallet will pick it up in Phase 7c.
 
 Reference primitive: [proof-of-context-impl](https://github.com/asastuai/proof-of-context-impl). Position paper: [proof-of-context](https://github.com/asastuai/proof-of-context).
 
@@ -250,7 +250,9 @@ pnpm --filter @payclaw/dashboard dev
 - [x] npm publish ([`payclaw-ai`](https://www.npmjs.com/package/payclaw-ai))
 - [x] Contract verification on BaseScan
 - [x] **PoC verification helper in SDK** (10 tests passing)
-- [ ] On-chain `IPoCVerifier` contract + `PolicyRegistry` integration
+- [x] On-chain `IPoCVerifier` contract (Phase 7a, 12 Foundry tests)
+- [x] `PolicyRegistry × PoCVerifier` integration (Phase 7b, 15 Foundry tests, opt-in per wallet)
+- [ ] AgentWallet routing through `checkTransactionWithPoC` (Phase 7c, pending)
 - [ ] Solana program implementation
 - [ ] Dashboard MVP (wallet management + approvals)
 - [ ] Interactive playground with live testnet
