@@ -54,11 +54,30 @@ interface IAgentWallet {
     /// @notice Executes a payment from this wallet to a recipient
     /// @dev Checks policy via PolicyRegistry. If amount > approvalThreshold, queues for approval.
     ///      Uses nonReentrant guard. Emits PaymentExecuted or ApprovalRequested.
+    ///      Internally routes through checkTransactionWithPoC with bytes32(0) — succeeds when PoC
+    ///      is not required for this wallet, reverts with POC_STALE_OR_MISSING when it is.
     /// @param to The recipient address
     /// @param token The ERC-20 token address (address(0) for native ETH)
     /// @param amount The amount to transfer in the token's smallest unit
     /// @param memo An arbitrary 32-byte memo for the payment
     function pay(address to, address token, uint256 amount, bytes32 memo) external;
+
+    /// @notice Executes a payment with an attached PoC commitment hash for freshness gating
+    /// @dev Same as `pay`, but the registry consults pocVerifier.isFresh(commitmentHash) when
+    ///      this wallet has opted into PoC enforcement. Use this overload from agents that
+    ///      consume PoC-attested data and need their downstream settlement to gate on freshness.
+    /// @param to The recipient address
+    /// @param token The ERC-20 token address (address(0) for native ETH)
+    /// @param amount The amount to transfer in the token's smallest unit
+    /// @param memo An arbitrary 32-byte memo for the payment
+    /// @param commitmentHash The PoC commitment hash to validate against pocVerifier
+    function payWithPoC(
+        address to,
+        address token,
+        uint256 amount,
+        bytes32 memo,
+        bytes32 commitmentHash
+    ) external;
 
     /// @notice Executes a token swap through an approved DEX router
     /// @dev Validates swap policy, router allowlist, and spending limits. Resets router approval after swap.
@@ -75,6 +94,24 @@ interface IAgentWallet {
         address router
     ) external;
 
+    /// @notice Executes a swap with an attached PoC commitment hash for freshness gating
+    /// @dev Same as `swap`, but the registry consults pocVerifier.isFresh(commitmentHash) when
+    ///      this wallet has opted into PoC enforcement.
+    /// @param tokenIn The input token address to sell
+    /// @param tokenOut The output token address to buy
+    /// @param amountIn The amount of input tokens to swap
+    /// @param minAmountOut The minimum acceptable output amount (must be > 0)
+    /// @param router The DEX router address to execute the swap through
+    /// @param commitmentHash The PoC commitment hash to validate against pocVerifier
+    function swapWithPoC(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address router,
+        bytes32 commitmentHash
+    ) external;
+
     /// @notice Executes multiple payments in a single transaction
     /// @dev All payments must pass policy checks and none may require approval. Max 20 items per batch.
     /// @param tos Array of recipient addresses
@@ -82,12 +119,34 @@ interface IAgentWallet {
     /// @param amounts Array of transfer amounts
     function batchPay(address[] calldata tos, address[] calldata tokens, uint256[] calldata amounts) external;
 
+    /// @notice Executes multiple payments under a single PoC commitment hash
+    /// @dev Every item in the batch is checked against the same commitmentHash. Useful for fan-out
+    ///      payments that all gate on one upstream attestation (e.g. one price snapshot drives N transfers).
+    /// @param tos Array of recipient addresses
+    /// @param tokens Array of ERC-20 token addresses (address(0) for native ETH)
+    /// @param amounts Array of transfer amounts
+    /// @param commitmentHash The PoC commitment hash to validate against pocVerifier for every item
+    function batchPayWithPoC(
+        address[] calldata tos,
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        bytes32 commitmentHash
+    ) external;
+
     // --- Owner Actions ---
 
     /// @notice Approves a queued approval request and executes the payment
     /// @dev Re-checks policy at execution time to guard against stale approvals (H-3).
     /// @param requestId The approval queue request identifier
     function approveRequest(uint256 requestId) external;
+
+    /// @notice Approves a queued request, gating settlement on a PoC commitment
+    /// @dev Same as `approveRequest`, but the re-check at execution time goes through
+    ///      checkTransactionWithPoC. If the wallet has opted into PoC enforcement, the
+    ///      caller must supply a fresh commitment hash; otherwise the call reverts.
+    /// @param requestId The approval queue request identifier
+    /// @param commitmentHash The PoC commitment hash to validate against pocVerifier
+    function approveRequestWithPoC(uint256 requestId, bytes32 commitmentHash) external;
 
     /// @notice Denies a queued approval request
     /// @param requestId The approval queue request identifier

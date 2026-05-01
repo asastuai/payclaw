@@ -101,7 +101,7 @@ What `verifyPocCommitment` checks (in order):
 
 Each failure returns a structured `PocVerdict` with `reason` set, so the caller can distinguish `stale` from `payload_hash_mismatch` from `operator_mismatch`.
 
-This is the **SDK-side enforcement** of the PoC release condition. On-chain enforcement is wired in two phases. **Phase 7a** ships the verifier contract `PoCVerifier.sol` (12 Foundry tests passing). **Phase 7b** wires `PolicyRegistry × PoCVerifier` so that policy evaluation can call `PoCVerifier.isFresh` as part of `checkTransactionWithPoC` (15 additional tests passing, opt-in per wallet via `setPocRequired`). **AgentWallet routing** through `checkTransactionWithPoC` is **planned (Phase 7c)** — at the time of this commit AgentWallet itself still calls the legacy `checkTransaction` method. Integrators consuming the policy contract directly can use the PoC-aware variant today; agent flows that route through the wallet will pick it up in Phase 7c.
+This is the **SDK-side enforcement** of the PoC release condition. On-chain enforcement is wired in three phases. **Phase 7a** ships the verifier contract `PoCVerifier.sol` (12 Foundry tests passing). **Phase 7b** wires `PolicyRegistry × PoCVerifier` so that policy evaluation can call `PoCVerifier.isFresh` as part of `checkTransactionWithPoC` (15 additional tests passing, opt-in per wallet via `setPocRequired`). **Phase 7c** routes `AgentWallet` itself through `checkTransactionWithPoC` and adds the `payWithPoC` / `swapWithPoC` / `batchPayWithPoC` / `approveRequestWithPoC` overloads (10 additional Foundry tests, 61 total in the EVM suite). Wallets that have not opted into PoC enforcement see no behavioral change; wallets that have must use the WithPoC overloads or pass through a fresh commitment hash.
 
 Reference primitive: [proof-of-context-impl](https://github.com/asastuai/proof-of-context-impl). Position paper: [proof-of-context](https://github.com/asastuai/proof-of-context).
 
@@ -252,7 +252,7 @@ pnpm --filter @payclaw/dashboard dev
 - [x] **PoC verification helper in SDK** (10 tests passing)
 - [x] On-chain `IPoCVerifier` contract (Phase 7a, 12 Foundry tests)
 - [x] `PolicyRegistry × PoCVerifier` integration (Phase 7b, 15 Foundry tests, opt-in per wallet)
-- [ ] AgentWallet routing through `checkTransactionWithPoC` (Phase 7c, pending)
+- [x] AgentWallet routing through `checkTransactionWithPoC` (Phase 7c, 10 additional Foundry tests, 61 total)
 - [ ] Solana program implementation
 - [ ] Dashboard MVP (wallet management + approvals)
 - [ ] Interactive playground with live testnet

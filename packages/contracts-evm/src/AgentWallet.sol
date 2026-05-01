@@ -86,13 +86,38 @@ contract AgentWallet is IAgentWallet {
     /// @inheritdoc IAgentWallet
     /// @dev For MVP, usdValue == amount (assumes stablecoins with 6 decimals, value passed as 8-decimal USD).
     ///      In production, this would query a Chainlink oracle for price conversion.
+    ///      Routes through _payInternal with bytes32(0) commitment — Phase 7c. This succeeds when
+    ///      the wallet has not opted into PoC enforcement, and is rejected with POC_STALE_OR_MISSING
+    ///      when it has. Wallets requiring PoC must call payWithPoC instead.
     function pay(address to, address token, uint256 amount, bytes32 memo) external onlyAgent nonReentrant {
+        _payInternal(to, token, amount, memo, bytes32(0));
+    }
+
+    /// @inheritdoc IAgentWallet
+    function payWithPoC(
+        address to,
+        address token,
+        uint256 amount,
+        bytes32 memo,
+        bytes32 commitmentHash
+    ) external onlyAgent nonReentrant {
+        _payInternal(to, token, amount, memo, commitmentHash);
+    }
+
+    /// @dev Shared payment logic used by pay and payWithPoC.
+    function _payInternal(
+        address to,
+        address token,
+        uint256 amount,
+        bytes32 memo,
+        bytes32 commitmentHash
+    ) internal {
         // For MVP, usdValue == amount (assuming stablecoins with 6 decimals, value passed as 8-decimal USD)
         // In production, this would query a Chainlink oracle
         uint256 usdValue = amount;
 
-        IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransaction(
-            address(this), to, token, usdValue
+        IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransactionWithPoC(
+            address(this), to, token, usdValue, commitmentHash
         );
 
         if (!result.allowed) {
@@ -116,6 +141,8 @@ contract AgentWallet is IAgentWallet {
     /// @dev Validates swap policy, checks router against allowlist, enforces spending limits,
     ///      approves the router, executes the swap via Uniswap-style interface, then resets
     ///      the router approval to zero (H-1) and verifies minimum output (H-2).
+    ///      Routes through _swapInternal with bytes32(0) commitment — see pay()'s note about
+    ///      PoC-required wallets needing the WithPoC overload.
     function swap(
         address tokenIn,
         address tokenOut,
@@ -123,6 +150,30 @@ contract AgentWallet is IAgentWallet {
         uint256 minAmountOut,
         address router
     ) external onlyAgent nonReentrant {
+        _swapInternal(tokenIn, tokenOut, amountIn, minAmountOut, router, bytes32(0));
+    }
+
+    /// @inheritdoc IAgentWallet
+    function swapWithPoC(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address router,
+        bytes32 commitmentHash
+    ) external onlyAgent nonReentrant {
+        _swapInternal(tokenIn, tokenOut, amountIn, minAmountOut, router, commitmentHash);
+    }
+
+    /// @dev Shared swap logic used by swap and swapWithPoC.
+    function _swapInternal(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        address router,
+        bytes32 commitmentHash
+    ) internal {
         // H-2: Require minAmountOut > 0 to prevent router from stealing tokenIn
         require(minAmountOut > 0, "AgentWallet: minAmountOut must be > 0");
 
@@ -143,8 +194,8 @@ contract AgentWallet is IAgentWallet {
         }
 
         // Check spending limits (using amountIn as usdValue for stablecoins)
-        IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransaction(
-            address(this), router, tokenIn, amountIn
+        IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransactionWithPoC(
+            address(this), router, tokenIn, amountIn, commitmentHash
         );
         require(result.allowed, result.reason);
 
@@ -182,11 +233,33 @@ contract AgentWallet is IAgentWallet {
     /// @inheritdoc IAgentWallet
     /// @dev Iterates over all payments, checking policy for each. All items must be allowed without
     ///      approval. Reverts the entire batch if any single item is rejected. Max 20 items.
+    ///      Routes through _batchPayInternal with bytes32(0) commitment.
     function batchPay(
         address[] calldata tos,
         address[] calldata tokens,
         uint256[] calldata amounts
     ) external onlyAgent nonReentrant {
+        _batchPayInternal(tos, tokens, amounts, bytes32(0));
+    }
+
+    /// @inheritdoc IAgentWallet
+    function batchPayWithPoC(
+        address[] calldata tos,
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        bytes32 commitmentHash
+    ) external onlyAgent nonReentrant {
+        _batchPayInternal(tos, tokens, amounts, commitmentHash);
+    }
+
+    /// @dev Shared batch payment logic. Every item is checked against the same commitmentHash,
+    ///      so an entire batch settles under a single upstream attestation.
+    function _batchPayInternal(
+        address[] calldata tos,
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        bytes32 commitmentHash
+    ) internal {
         require(
             tos.length == tokens.length && tokens.length == amounts.length,
             "AgentWallet: array length mismatch"
@@ -196,8 +269,8 @@ contract AgentWallet is IAgentWallet {
         for (uint256 i = 0; i < tos.length; i++) {
             uint256 usdValue = amounts[i];
 
-            IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransaction(
-                address(this), tos[i], tokens[i], usdValue
+            IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransactionWithPoC(
+                address(this), tos[i], tokens[i], usdValue, commitmentHash
             );
 
             require(result.allowed && !result.needsApproval, "AgentWallet: batch item rejected");
@@ -214,13 +287,28 @@ contract AgentWallet is IAgentWallet {
     /// @inheritdoc IAgentWallet
     /// @dev Re-checks the policy at execution time (H-3) in case the policy has changed since
     ///      the request was created. Executes the transfer and records the spend on success.
+    ///      Routes through _approveRequestInternal with bytes32(0) commitment.
     function approveRequest(uint256 requestId) external onlyOwner nonReentrant {
+        _approveRequestInternal(requestId, bytes32(0));
+    }
+
+    /// @inheritdoc IAgentWallet
+    function approveRequestWithPoC(uint256 requestId, bytes32 commitmentHash)
+        external
+        onlyOwner
+        nonReentrant
+    {
+        _approveRequestInternal(requestId, commitmentHash);
+    }
+
+    /// @dev Shared approval logic for approveRequest and approveRequestWithPoC.
+    function _approveRequestInternal(uint256 requestId, bytes32 commitmentHash) internal {
         IApprovalQueue.ApprovalRequest memory req = approvalQueue.getRequest(requestId);
         require(req.wallet == address(this), "AgentWallet: wrong wallet");
 
         // H-3: Re-check policy at execution time (policy may have changed since request creation)
-        IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransaction(
-            address(this), req.to, req.token, req.amount
+        IPolicyRegistry.CheckResult memory result = policyRegistry.checkTransactionWithPoC(
+            address(this), req.to, req.token, req.amount, commitmentHash
         );
         require(result.allowed, "AgentWallet: policy check failed on approval");
 
