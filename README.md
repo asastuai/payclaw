@@ -23,11 +23,11 @@
 
 ## The Problem
 
-AI agents can already pay. Protocols like [x402](https://x402.org) solved the payment rail — agents make HTTP requests, pay in stablecoins, get the resource. That works.
+AI agents can already pay. Protocols like [x402](https://x402.org) solved the payment rail. Agents make HTTP requests, pay in stablecoins, get the resource. That works.
 
 **What doesn't exist is the control layer.** When your agent can pay autonomously, who sets the limits? Who approves large transactions? What stops a compromised agent from draining the wallet?
 
-x402 is Visa — the rail that moves money. **PayClaw is the corporate expense system** — who can spend what, how much, to whom, and when they need human approval. All enforced on-chain by smart contracts, not application code.
+x402 is Visa, the rail that moves money. **PayClaw is the corporate expense system**: who can spend what, how much, to whom, and when they need human approval. All enforced on-chain by smart contracts, not application code.
 
 ## Quickstart
 
@@ -130,24 +130,24 @@ Full example: [`examples/poc-gated-payment.ts`](examples/poc-gated-payment.ts).
                                                   └──────────────┘
 ```
 
-**Every transaction goes through the Policy Engine.** If the agent tries to exceed its limits, the contract reverts. If the amount needs approval, it queues for the human. The agent cannot bypass this — it's enforced on-chain.
+**Every transaction goes through the Policy Engine.** If the agent tries to exceed its limits, the contract reverts. If the amount needs approval, it queues for the human. The agent cannot bypass this. It's enforced on-chain.
 
 ## Features
 
 ### For Developers
-- **10-line integration** — `npm install` and go
-- **Multi-chain** — Base L2, BSC, and Solana from a single API
-- **TypeScript-first** — full type safety, IntelliSense, JSDoc
-- **Event system** — subscribe to payments, approvals, policy changes
-- **Gasless** — agents don't need ETH (ERC-4337 + Paymaster)
+- **10-line integration**: `npm install` and go
+- **Multi-chain**: Base L2, BSC, and Solana from a single API
+- **TypeScript-first**: full type safety, IntelliSense, JSDoc
+- **Event system**: subscribe to payments, approvals, policy changes
+- **Gasless**: agents don't need ETH (ERC-4337 + Paymaster)
 
 ### For Security
-- **On-chain policy enforcement** — daily limits, per-tx limits, token allowlists, recipient allowlists, cooldowns
-- **Human approval flow** — transactions above threshold queue for owner approval
-- **Emergency withdraw** — owner can pull all funds instantly
-- **Agent revocation** — disable the agent with one call
-- **Non-upgradeable contracts** — immutable by design
-- **Reentrancy protection** — all state-changing functions are guarded
+- **On-chain policy enforcement**: daily limits, per-tx limits, token allowlists, recipient allowlists, cooldowns
+- **Human approval flow**: transactions above threshold queue for owner approval
+- **Emergency withdraw**: owner can pull all funds instantly
+- **Agent revocation**: disable the agent with one call
+- **Non-upgradeable contracts**: immutable by design
+- **Reentrancy protection**: all state-changing functions are guarded
 
 ### Policy Engine
 
@@ -167,12 +167,12 @@ Full example: [`examples/poc-gated-payment.ts`](examples/poc-gated-payment.ts).
 ```
 payclaw/
 ├── packages/
-│   ├── sdk/                    # @payclaw/sdk — the npm package
+│   ├── sdk/                    # @payclaw/sdk (the npm package)
 │   ├── contracts-evm/          # Solidity smart contracts (Foundry)
 │   ├── contracts-solana/       # Anchor programs (Rust)
 │   └── shared/                 # Shared types and constants
 ├── apps/
-│   ├── dashboard/              # Next.js — human oversight UI
+│   ├── dashboard/              # Next.js (human oversight UI)
 │   ├── playground/             # Interactive sandbox
 │   └── docs/                   # Documentation site
 ```
@@ -188,19 +188,19 @@ payclaw/
 
 **24 Foundry tests** (16 unit + 5 fuzz + 3 invariant) covering: payments, limits, approvals, batch operations, emergency withdrawals, access control, daily reset, and 38,400 random call sequences.
 
-**[Security audited](SECURITY_AUDIT.md)** — 3 critical + 4 high findings identified and fixed.
+**[Security audited](SECURITY_AUDIT.md)**: 3 critical + 4 high findings identified and fixed.
 
 ## Use Cases
 
-**Customer support agent** — processes refunds within policy limits, escalates large amounts to humans.
+**Customer support agent**: processes refunds within policy limits, escalates large amounts to humans.
 
-**Trading bot** — operates within daily limits and approved tokens. Can't drain the wallet even if compromised.
+**Trading bot**: operates within daily limits and approved tokens. Can't drain the wallet even if compromised.
 
-**Subscription manager** — handles recurring payments to approved recipients only.
+**Subscription manager**: handles recurring payments to approved recipients only.
 
-**Multi-agent systems** — agents pay each other for services. Microtransactions settled on-chain in seconds.
+**Multi-agent systems**: agents pay each other for services. Microtransactions settled on-chain in seconds.
 
-**Procurement agent** — buys supplies from approved vendors, queues large purchases for approval.
+**Procurement agent**: buys supplies from approved vendors, queues large purchases for approval.
 
 ## Tests
 
@@ -236,14 +236,14 @@ pnpm --filter @payclaw/dashboard dev
 
 ## Roadmap
 
-- [x] Smart contracts (EVM) — AgentWallet, Factory, PolicyRegistry, ApprovalQueue
+- [x] Smart contracts (EVM): AgentWallet, Factory, PolicyRegistry, ApprovalQueue
 - [x] 24 tests passing (16 unit + 5 fuzz + 3 invariant)
-- [x] Security audit — 7 findings fixed ([report](SECURITY_AUDIT.md))
-- [x] TypeScript SDK with viem — full contract integration
+- [x] Security audit: 7 findings fixed ([report](SECURITY_AUDIT.md))
+- [x] TypeScript SDK with viem: full contract integration
 - [x] Deploy to Base Sepolia testnet
 - [x] End-to-end integration test on live testnet
-- [x] Documentation — 13 pages (concepts, API reference, guides)
-- [x] JSDoc + NatSpec — full API documentation
+- [x] Documentation: 13 pages (concepts, API reference, guides)
+- [x] JSDoc + NatSpec: full API documentation
 - [x] Working examples (basic payment, policies, approvals, PoC-gated payment)
 - [x] Dashboard scaffold (Next.js)
 - [x] Playground scaffold
@@ -269,12 +269,12 @@ McKinsey projects **$3-5 trillion** in agentic commerce by 2030. Google, Stripe,
 
 PayClaw is the agent wallet layer of [**Aletheia**](https://github.com/asastuai/aletheia). Five sibling repos compose the rest of the stack.
 
-- [**Proof-of-Context**](https://github.com/asastuai/proof-of-context) — verification spine. The primitive PayClaw's verification helper checks against.
-- [**proof-of-context-impl**](https://github.com/asastuai/proof-of-context-impl) — Rust reference implementation of PoC.
-- [**SUR Protocol**](https://github.com/asastuai/sur-protocol) — perp DEX. Consumer of PayClaw wallets for agent trading custody.
-- [**TrustLayer**](https://github.com/asastuai/TrustLayer) — agent reputation. Uses PayClaw escrow as one of its four primitives.
-- [**BaseOracle**](https://github.com/asastuai/BaseOracle) — pay-per-query data. Recipient of PayClaw-controlled USDC payments. Producer of `f_i` PoC commitments PayClaw can verify.
-- [**Vigil**](https://github.com/asastuai/vigil) — DeFi intelligence. Same recipient + producer pattern.
+- [**Proof-of-Context**](https://github.com/asastuai/proof-of-context): verification spine. The primitive PayClaw's verification helper checks against.
+- [**proof-of-context-impl**](https://github.com/asastuai/proof-of-context-impl): Rust reference implementation of PoC.
+- [**SUR Protocol**](https://github.com/asastuai/sur-protocol): perp DEX. Consumer of PayClaw wallets for agent trading custody.
+- [**TrustLayer**](https://github.com/asastuai/TrustLayer): agent reputation. Uses PayClaw escrow as one of its four primitives.
+- [**BaseOracle**](https://github.com/asastuai/BaseOracle): pay-per-query data. Recipient of PayClaw-controlled USDC payments. Producer of `f_i` PoC commitments PayClaw can verify.
+- [**Vigil**](https://github.com/asastuai/vigil): DeFi intelligence. Same recipient + producer pattern.
 
 ## License
 
