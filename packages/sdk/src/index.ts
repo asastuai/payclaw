@@ -7,6 +7,7 @@ export { PolicyEngine } from './PolicyEngine';
 export {
   verifyPocCommitment,
   requireValidPoc,
+  canonicalHash,
 } from './poc';
 export type {
   PocBlock,
