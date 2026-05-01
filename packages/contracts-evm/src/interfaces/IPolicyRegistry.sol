@@ -96,4 +96,52 @@ interface IPolicyRegistry {
     /// @param wallet The agent wallet address to query
     /// @return The block timestamp of the last spend (as uint40)
     function lastTxTimestamp(address wallet) external view returns (uint40);
+
+    // ============================================================
+    //   Proof-of-Context (PoC) integration — Phase 7b
+    // ============================================================
+
+    /// @notice Emitted when the PoC verifier address is set
+    /// @param verifier The IPoCVerifier-compatible contract address
+    event PocVerifierSet(address indexed verifier);
+
+    /// @notice Emitted when a wallet toggles its PoC requirement
+    /// @param wallet The wallet whose PoC requirement changed
+    /// @param required Whether PoC is now required for this wallet
+    event PocRequiredSet(address indexed wallet, bool required);
+
+    /// @notice Sets the PoC verifier contract address
+    /// @dev Settable once. Reverts if already set or if address is zero.
+    /// @param verifier The IPoCVerifier contract that records verified commitments
+    function setPocVerifier(address verifier) external;
+
+    /// @notice Toggles PoC enforcement for a specific wallet
+    /// @dev Only callable by the wallet itself or its registered owner.
+    /// @param wallet The agent wallet address
+    /// @param required Whether PoC verification is required for this wallet's transactions
+    function setPocRequired(address wallet, bool required) external;
+
+    /// @notice Returns whether PoC verification is required for the given wallet
+    /// @param wallet The agent wallet address to query
+    /// @return required True if the wallet has PoC enforcement enabled
+    function isPocRequired(address wallet) external view returns (bool required);
+
+    /// @notice Evaluates a proposed transaction with optional PoC freshness gating
+    /// @dev Performs the same checks as checkTransaction. If the wallet has PoC enforcement
+    ///      enabled (isPocRequired returns true), additionally calls pocVerifier.isFresh on
+    ///      the supplied commitment hash. If the commitment is missing or stale, the transaction
+    ///      is rejected with reason "POC_STALE_OR_MISSING".
+    /// @param wallet The agent wallet initiating the transaction
+    /// @param to The intended recipient of the transaction
+    /// @param token The ERC-20 token address (or address(0) for native ETH)
+    /// @param usdValue The USD-equivalent value of the transaction
+    /// @param commitmentHash The PoC commitment hash to verify against the verifier
+    /// @return A CheckResult indicating whether the transaction is allowed
+    function checkTransactionWithPoC(
+        address wallet,
+        address to,
+        address token,
+        uint256 usdValue,
+        bytes32 commitmentHash
+    ) external view returns (CheckResult memory);
 }

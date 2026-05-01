@@ -4,6 +4,7 @@
 pragma solidity ^0.8.26;
 
 import { IPolicyRegistry } from "./interfaces/IPolicyRegistry.sol";
+import { IPoCVerifier } from "./interfaces/IPoCVerifier.sol";
 
 /// @title PolicyRegistry
 /// @notice Stores and enforces per-wallet spending policies including daily/per-tx limits,
@@ -28,6 +29,14 @@ contract PolicyRegistry is IPolicyRegistry {
     /// @dev C-3: Only the factory can register new wallets
     /// @notice The factory address authorized to register wallets
     address public factory;
+
+    /// @notice The IPoCVerifier-compatible contract used to verify PoC commitments
+    /// @dev Settable once via setPocVerifier. address(0) means PoC enforcement is unconfigured
+    ///      at the registry level; in that state, isPocRequired must always return false.
+    address public pocVerifier;
+
+    /// @dev Per-wallet flag indicating whether PoC verification gates this wallet's transactions
+    mapping(address wallet => bool) private _pocRequired;
 
     /// @dev Restricts access to the wallet itself or its registered owner
     /// @param wallet The wallet address to check authorization for
@@ -73,12 +82,24 @@ contract PolicyRegistry is IPolicyRegistry {
     /// @inheritdoc IPolicyRegistry
     /// @dev Checks are evaluated in this order: token allowlist, recipient allowlist,
     ///      per-tx limit, daily limit, cooldown, approval threshold. Returns on the first failure.
+    ///      Delegates to internal helper so that checkTransactionWithPoC can reuse the same
+    ///      logic without an external self-call.
     function checkTransaction(
         address wallet,
         address to,
         address token,
         uint256 usdValue
     ) external view returns (CheckResult memory) {
+        return _checkTransactionLogic(wallet, to, token, usdValue);
+    }
+
+    /// @dev Internal policy evaluator shared by checkTransaction and checkTransactionWithPoC.
+    function _checkTransactionLogic(
+        address wallet,
+        address to,
+        address token,
+        uint256 usdValue
+    ) internal view returns (CheckResult memory) {
         Policy storage p = _policies[wallet];
 
         // Token allowlist
@@ -131,6 +152,61 @@ contract PolicyRegistry is IPolicyRegistry {
     /// @inheritdoc IPolicyRegistry
     function lastTxTimestamp(address wallet) external view returns (uint40) {
         return _lastTxTimestamp[wallet];
+    }
+
+    // ============================================================
+    //   Proof-of-Context (PoC) integration — Phase 7b
+    // ============================================================
+
+    /// @inheritdoc IPolicyRegistry
+    function setPocVerifier(address verifier) external {
+        require(pocVerifier == address(0), "PolicyRegistry: pocVerifier already set");
+        require(verifier != address(0), "PolicyRegistry: zero address");
+        pocVerifier = verifier;
+        emit PocVerifierSet(verifier);
+    }
+
+    /// @inheritdoc IPolicyRegistry
+    function setPocRequired(address wallet, bool required) external onlyWalletOrOwner(wallet) {
+        _pocRequired[wallet] = required;
+        emit PocRequiredSet(wallet, required);
+    }
+
+    /// @inheritdoc IPolicyRegistry
+    function isPocRequired(address wallet) external view returns (bool) {
+        if (pocVerifier == address(0)) return false;
+        return _pocRequired[wallet];
+    }
+
+    /// @inheritdoc IPolicyRegistry
+    /// @dev Performs the full checkTransaction policy evaluation, then if PoC is required
+    ///      for this wallet, also queries the configured pocVerifier for commitment freshness.
+    function checkTransactionWithPoC(
+        address wallet,
+        address to,
+        address token,
+        uint256 usdValue,
+        bytes32 commitmentHash
+    ) external view returns (CheckResult memory) {
+        // First: standard policy check. Internal call avoids the self-call gas overhead.
+        CheckResult memory base = _checkTransactionLogic(wallet, to, token, usdValue);
+        if (!base.allowed) return base;
+
+        // PoC gating: only when configured at the registry AND enabled per-wallet.
+        if (pocVerifier == address(0)) return base;
+        if (!_pocRequired[wallet]) return base;
+
+        // Empty commitment hash is a guard against accidentally bypassing the gate.
+        if (commitmentHash == bytes32(0)) {
+            return CheckResult(false, false, "POC_STALE_OR_MISSING");
+        }
+
+        bool fresh = IPoCVerifier(pocVerifier).isFresh(commitmentHash);
+        if (!fresh) {
+            return CheckResult(false, false, "POC_STALE_OR_MISSING");
+        }
+
+        return base;
     }
 
     // --- Internal ---
